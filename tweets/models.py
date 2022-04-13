@@ -20,6 +20,8 @@ class User(DB.Model):
 
     #the backref down below automatically adds a list of tweets here
     #tweets = []
+    # Newest tweet id column Schema
+    newest_tweet_id = DB.Column(DB.BigInteger)
 
 class Tweet(DB.Model):
     #ID column schema
@@ -27,6 +29,9 @@ class Tweet(DB.Model):
 
     #text column schema
     text = DB.Column(DB.Unicode(300))
+
+    # Word Embeddings (vect) Schema
+    vect = DB.Column(DB.PickleType, nullable=False)
 
     #user column schema
     user_id = DB.Column(DB.BigInteger, DB.ForeignKey('user.id'), nullable=False)
