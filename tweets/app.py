@@ -1,6 +1,7 @@
-from flask import Flask, render_template
-from .models import DB, User, Tweet
+from flask import Flask, render_template, request
 
+from .models import DB, User, Tweet
+from .twitter import get_user_and_tweets
 #create a factory for serving up the app when launched
 def create_app():
         
@@ -23,9 +24,26 @@ def create_app():
         users = User.query.all()
         return render_template('base.html', users=users)
 
-    #test another route
-    @app.route('/test')
-    def test():
+
+    @app.route('/add_user', methods=['POST'])
+    def add_user():
+        
+        # Allow 'POST' method in app route
+        user = request.form.get('user_name')
+        
+        try:
+            response = get_user_and_tweets(user)
+
+            if not response:
+                return 'Nothing was added' \
+                        '<br><br><a href="/" class="button warning">Go Back!</a'
+
+            else:
+                return f'User: {user} successfully added!' \
+                        '<br><br><a href="/" class="button warning">Go Back!</a'
+
+        except Exception as e:
+            return str(e)       
         #remove everything from database
         DB.drop_all()
 
