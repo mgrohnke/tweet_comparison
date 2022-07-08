@@ -1,4 +1,3 @@
-from pickle import FALSE
 from flask_sqlalchemy import SQLAlchemy
 
 #create a database object
@@ -18,11 +17,6 @@ class User(DB.Model):
     #username column schema
     username = DB.Column(DB.String, nullable=False)
 
-    #the backref down below automatically adds a list of tweets here
-    #tweets = []
-    # Newest tweet id column Schema
-    newest_tweet_id = DB.Column(DB.BigInteger)
-
 class Tweet(DB.Model):
     #ID column schema
     id = DB.Column(DB.BigInteger, primary_key=True, nullable=False)
@@ -30,12 +24,8 @@ class Tweet(DB.Model):
     #text column schema
     text = DB.Column(DB.Unicode(300))
 
-    # Word Embeddings (vect) Schema
-    vect = DB.Column(DB.PickleType, nullable=False)
-
     #user column schema
     user_id = DB.Column(DB.BigInteger, DB.ForeignKey('user.id'), nullable=False)
 
     #set up relationship between tweets and IDs
-    #this will automatically add new id to both the tweet and user
     user = DB.relationship('User', backref=DB.backref('tweets'), lazy=True)
