@@ -43,7 +43,7 @@ def create_app():
         DB.session.add(julian)
 
         #make some tweets
-        tweet1 = Tweet(id=1, text='twitter is fun!', user=ryan)
+        tweet1 = Tweet(id=1, text='this is a great tweet!', user=ryan)
         tweet2 = Tweet(id=2, text='this is some other tweet text', user=julian)
 
         #add the tweets to the DB session
