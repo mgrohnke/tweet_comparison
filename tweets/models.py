@@ -17,12 +17,18 @@ class User(DB.Model):
     #username column schema
     username = DB.Column(DB.String, nullable=False)
 
+    #newest tweet id column schema
+    newest_tweet_id = DB.Column(DB.BigInteger)
+
 class Tweet(DB.Model):
     #ID column schema
     id = DB.Column(DB.BigInteger, primary_key=True, nullable=False)
 
     #text column schema
     text = DB.Column(DB.Unicode(300))
+
+    #Word Embeddings (vect) Schema
+    vect = DB.Column(DB.PickleType, nullable=False)
 
     #user column schema
     user_id = DB.Column(DB.BigInteger, DB.ForeignKey('user.id'), nullable=False)

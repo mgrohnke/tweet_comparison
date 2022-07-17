@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request
+from tweets.twitter import add_or_update_user
 
 from .models import DB, User, Tweet
 #from .twitter import get_user_and_tweets
@@ -24,8 +25,21 @@ def create_app():
         users = User.query.all()
         return render_template('base.html', users=users)
 
+    @app.route('/update')
+    def update():
+        users = User.query.all()
+        usernames = [user.username for user in users]
+        for username in usernames:
+            add_or_update_user(username)
+        return 'updated'
+
+    @app.route('/populate')
+    def populate():
+    # do this when somebody hits the home page
+        return 'created some users'
+
     # make the route for adding user
-    @app.route('/test')
+    @app.route('/reset')
     def test():
               
         #remove everything from database
@@ -34,28 +48,6 @@ def create_app():
         #create a new DB with indicated tables
         DB.create_all()
 
-        #create user object from our .models class
-        ryan = User(id=1, username='ryanallred')
-        julian = User(id=2, username='julian')
-
-        #add the user to the database
-        DB.session.add(ryan)
-        DB.session.add(julian)
-
-        #make some tweets
-        tweet1 = Tweet(id=1, text='this is a great tweet!', user=ryan)
-        tweet2 = Tweet(id=2, text='this is some other tweet text', user=julian)
-
-        #add the tweets to the DB session
-        DB.session.add(tweet1)
-        DB.session.add(tweet2)
-
-        #save the database
-        DB.session.commit()
-
-        #display new user on page
-        #query to get all users
-        users = User.query.all()
-        return render_template('base.html', users=users, title='test')
+        return 'database reset'
 
     return app
