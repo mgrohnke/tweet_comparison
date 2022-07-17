@@ -1,60 +1,52 @@
-from os import getenv
-import tweepy
+import requests
+import ast
+
 from .models import DB, Tweet, User
+
 import spacy
-
-# Get API keys from .env file
-key = getenv('TWITTER_API_KEY')
-secret = getenv('TWITTER_API_KEY_SECRET')
-
-# Connect to the Twitter API
-TWITTER_AUTH = tweepy.OAuthHandler(key, secret)
-TWITTER = tweepy.API(TWITTER_AUTH)
 
 # Add a new user to the database if they do not already exist
 # If the user already exists in the DB, grab their most recent tweets
 
-def add_or_update_user(username):
+def get_user_and_tweets(username):
     '''Takes username (twitter handle) and pulls user 
     and tweet data from twitter API'''
 
+    HEROKU_URL = 'https://lambda-ds-twit-assist.herokuapp.com/user/'
+
+    user = ast.literal_eval(requests.get(HEROKU_URL + username).text)
+
+    nlp = spacy.load('/my_model')
+
     try:
-        # Get the user data
-        twitter_user = TWITTER.get_user(screen_name=username)
 
-        # Create a db_user from db model (check to see if db user already exists)
-        db_user = (User.query.get(twitter_user.id) or User(id=twitter_user.id, username=username))
+        if User.query.get(user['twitter_handle']['id']):
+            db_user = User.query.get(user['twitter_handle']['id'])
+        else:
+            db_user = User(id=user['twitter_handle']['id'],
+                            name=user['twitter_handle']['username'])
+            DB.session.add(db_user)
 
-        # Add the user to the database
-        DB.session.add(db_user)
+        tweets_added = 0
 
-        # Get the user's tweets
-        tweets = twitter_user.timeline(count=200, 
-                                        exclude_replies=True, 
-                                        include_rts=False, 
-                                        tweet_mode='extended',
-                                        since_id=db_user.newest_tweet_id)
+        for tweet in user['tweets']:
 
-        if tweets:
-            db_user.newest_tweet_id = tweets[0].id
+            if Tweet.query.get(tweet['id']):
+                break
+            else:
+                tweet_text = tweet['full_text']
 
-        # Pull out only the tweet information that we care about from the list of tweets
-        for tweet in tweets:
-            tweet_vector = vectorize_tweet(tweet.full_text)
-            db_tweet = Tweet(id=tweet.id, 
-                            text=tweet.full_text[:300],
-                            vect=tweet_vector)
-            db_user.tweets.append(db_tweet)
-            DB.session.add(db_tweet)
+                db_tweet = Tweet(id=tweet['id'], tweet=tweet_text, embeddings=nlp(tweet_text).vector)
 
+                db_user.tweets.append(db_tweet)
+
+                DB.session.add(db_tweet)
+
+                tweets_added += 1
+        
     except Exception as e:
-        print(f"Error Processing {username}: {e}")
         raise e
-    else:
-        DB.session.commit()
 
-nlp = spacy.load('my_model/')
+    DB.session.commit()
 
-def vectorize_tweet(tweet_text):
-    '''return the word embedding for a given string of text'''
-    return nlp(tweet_text).vector
+    return tweets_added

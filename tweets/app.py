@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
+
 from tweets.twitter import add_or_update_user
-from tweets.models import DB, User, Tweet
+from tweets.models import DB, User
 from tweets.predict import predict_user
 
 # create a factory for serving up the app when launched
