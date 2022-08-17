@@ -17,8 +17,9 @@ class User(DB.Model):
     #username column schema
     username = DB.Column(DB.String, nullable=False)
 
-    #newest tweet id column schema
-    newest_tweet_id = DB.Column(DB.BigInteger)
+    def __repr__(self):
+        return f'[User: {self.name}]'
+
 
 class Tweet(DB.Model):
     #ID column schema
@@ -28,10 +29,13 @@ class Tweet(DB.Model):
     text = DB.Column(DB.Unicode(300))
 
     #Word Embeddings (vect) Schema
-    vect = DB.Column(DB.PickleType, nullable=False)
+    embeddings = DB.Column(DB.PickleType, nullable=False)
 
     #user column schema
     user_id = DB.Column(DB.BigInteger, DB.ForeignKey('user.id'), nullable=False)
 
     #set up relationship between tweets and IDs
     user = DB.relationship('User', backref=DB.backref('tweets'), lazy=True)
+
+    def __repr__(self):
+        return f'[Tweet: {self.text}]'
