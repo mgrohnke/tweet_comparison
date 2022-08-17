@@ -9,8 +9,13 @@ import spacy
 # If the user already exists in the DB, grab their most recent tweets
 
 def get_user_and_tweets(username):
-    '''Takes username (twitter handle) and pulls user 
-    and tweet data from twitter API'''
+    '''
+    This function will make a call to get Twitter user data
+    and their most recent 200 tweets on their timeline
+    
+    parameter: username -- Twitter handle of user
+    returns: Adds a user and their tweets to database
+    '''
 
     HEROKU_URL = 'https://lambda-ds-twit-assist.herokuapp.com/user/'
 

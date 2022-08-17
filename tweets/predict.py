@@ -2,7 +2,7 @@ import numpy as np
 import spacy
 import sklearn.linear_model import LogisticRegression
 
-from tweets.models import User
+from .models import User
 
 def predict_user(user1_name, user2_name, tweet_text):
 

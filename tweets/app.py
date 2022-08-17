@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request
 
-from tweets.twitter import add_or_update_user
+from decouple import config
+
+from tweets.twitter import get_user_and_tweets
 from tweets.models import DB, User
 from tweets.predict import predict_user
 
