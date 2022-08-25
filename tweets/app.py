@@ -72,7 +72,7 @@ def create_app():
         prediction = predict_user(user0, user1, tweet_text)
 
         message = '"{}" is more likely to be said by @{} than @{}'.format(
-            tweet_text, user0 if predection else user1,
+            tweet_text, user0 if prediction else user1,
             user1 if prediction else user0
         )
 

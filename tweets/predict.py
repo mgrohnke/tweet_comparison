@@ -1,6 +1,6 @@
 import numpy as np
 import spacy
-import sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression
 
 from .models import User
 
