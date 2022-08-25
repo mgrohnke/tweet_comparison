@@ -12,6 +12,7 @@ spacy = "*"
 python-dotenv = "*"
 python-decouple = "*"
 sklearn = "*"
+numpy = "*"
 
 [dev-packages]
 
