@@ -1,10 +1,8 @@
 from flask import Flask, render_template, request
-
-from decouple import config
-
-from tweets.twitter import get_user_and_tweets
-from tweets.models import DB, User
-from tweets.predict import predict_user
+from os import getenv
+from .twitter import get_or_update_user
+from .models import DB, User, Tweet
+from .predict import predict_user
 
 # create a factory for serving up the app when launched
 def create_app():
@@ -14,7 +12,7 @@ def create_app():
 
     # configuration
     app.config["SQLALCHEMY_TRACK_MODIFICATION"] = False
-    app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///db.sqlite3'
+    app.config["SQLALCHEMY_DATABASE_URI"] = getenv('DATABASE_URI')
 
     # connect the databse to our app object
     DB.init_app(app)
@@ -23,71 +21,56 @@ def create_app():
     @app.route('/')
     def root():
     # do this when somebody hits the home page
-        # set "users" to empty list if no users in database
-        if not User.query.all():
-            return render_template('base.html', users=[])
+        return render_template('base.html', title='Home', users=User.query.all())
 
-        # query all users if users in database
-        return render_template('base.html', users=User.query.all())
+    # update users with their latest tweets
+    @app.route('/update')
+    def update():
+        users = User.query.all()
+        usernames = [user.username for user in users]
+        for username in usernames:
+            get_or_update_user(username)
+        return render_template('base.html', title='All users have been updated to include their latest tweets')
 
-    @app.route('/add_user', methods=['POST'])
-    def add_user():
+    # test another route
+    @app.route('/reset')
+    def test():
+        DB.drop_all()
+        DB.create_all()
+        return render_template('base.html', title='Database Reset')
 
-        user = request.form.get('user_name')
-
-        try:
-            response = get_user_and_tweets(user)
-
-            # response will be value 0 or greater.  If it is 0, no tweets added
-            if not response:
-                return 'Nothing added' \
-                        '<br><br><a href="/" class="button warning">Go Back!</a'
-
-            # if response is 1 or greater, tweets added
-            else:
-                return f'User: {user} successfully added!' \
-                        '<br><br><a href="/" class="button warning">Go Back!</a'
-
-        except Exception as e:
-            return str(e)
-
-
+    # this route is NOT displaying information
+    # this route changes our database
+    @app.route('/user', methods=['POST'])
     @app.route('/user/<name>', methods=['GET'])
     def user(name=None, message=''):
+        # grab the username that the user has put into the input box
+        name = name or request.values['user_name']
 
         try:
-            tweets = User.query.filter(User.name == name).one().tweets
-
+            if request.method == 'POST':
+                get_or_update_user(name)
+                message = f'User "{name}" was successfully added.'
+            tweets = User.query.filter(User.username == name).one().tweets
         except Exception as e:
-            message = f'Error adding @{name}: {e}'
+            message = f'Error adding {name}: {e}'
             tweets = []
-        return render_template('user.html', title=name, tweets=tweets, message=message)
+        else:
+            return render_template('user.html', title=name, tweets=tweets, message=message)
 
     @app.route('/compare', methods=['POST'])
-    def predict():
-        user0 = request.form.get('user0')
-        user1 = request.form.get('user1')
-        tweet_text = request.form.get('tweet_text')
+    def compare():
+        user0, user1 = sorted([request.values['user0'], request.values['user1']])
 
-        prediction = predict_user(user0, user1, tweet_text)
-
-        message = '"{}" is more likely to be said by @{} than @{}'.format(
-            tweet_text, user0 if prediction else user1,
-            user1 if prediction else user0
-        )
-
-        return message + '<br><br><a href="/" class="button warning">Go Back!</a>'
-
-    # make the route for adding user
-    @app.route('/reset')
-    def reset():
-              
-        #remove everything from database
-        DB.drop_all()
-
-        #create a new DB with indicated tables
-        DB.create_all()
-
-        return 'Database Reset'
+        if user0 == user1:
+            message = 'Cannot compare a user to themselves!'
+        else:
+            tweet_text = request.values['tweet_text']
+            prediction = predict_user(user0, user1, tweet_text)
+            message = '''"{}" is more likely to be said
+                        by {} than {}.'''.format(tweet_text,
+                                                user1 if prediction else user0,
+                                                user0 if prediction else user1)
+        return render_template('prediction.html', title='Prediction', message=message)
 
     return app
